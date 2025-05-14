@@ -41,13 +41,15 @@ function CreateESP(target, labelBase, color)
     text.TextScaled = true
     text.Text = labelBase .. " - ???m"
 
+    -- Cập nhật liên tục
     spawn(function()
         while esp and esp.Parent and target and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") do
-            local playerPos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-            local objPos = target.Position
-            local dist = (playerPos - objPos).Magnitude
-            text.Text = labelBase .. string.format(" - %.0fm", dist)
-            wait(0.5)
+            local localChar = game.Players.LocalPlayer.Character
+            if localChar and localChar:FindFirstChild("HumanoidRootPart") and target:IsA("BasePart") then
+                local dist = (localChar.HumanoidRootPart.Position - target.Position).Magnitude
+                text.Text = labelBase .. string.format(" - %.0fm", dist)
+            end
+            wait(0.1)  -- Cập nhật nhanh hơn, mỗi 0.1 giây
         end
     end)
 end
@@ -80,7 +82,7 @@ spawn(function()
     end
 end)
 
--- 🎨 GUI Giao Diện
+-- 🎨 GUI Giao Diện có thể di chuyển
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ESP_GUI"
 
@@ -123,3 +125,31 @@ end
 -- 🧭 Các nút công tắc
 createToggle("ESP Trái Ác Quỷ", "espFruitEnabled")
 createToggle("ESP Người Chơi", "espPlayerEnabled")
+
+-- 🖱️ Thêm tính năng di chuyển menu
+local dragging, dragInput, dragStart, startPos
+local function dragFrame(input)
+    if dragging then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragFrame(input)
+    end
+end)
